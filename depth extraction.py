@@ -1,7 +1,5 @@
 import cv2
 import numpy
-import matplotlib.pyplot as plt
-
 
 ##defining the visibility function
 def visibility(p,q,depth):
@@ -23,13 +21,16 @@ def visibility(p,q,depth):
     return True
 
 # Creating the L-channel
-img = cv2.imread('emma.jpg')
-img_L = 0.212*img[:,:,2] + 0.715*img[:,:,1]+0.072*img[:,:,0]
-img_L = img_L.astype('float32')
+img = cv2.imread('buddha.jpg')
+cv2.imshow('buddha_input',img)
+img_Lab = cv2.cvtColor(img,cv2.COLOR_BGR2Lab)
+img_L = img_Lab[:,:,0]
+img_A = img_Lab[:,:,1]
+img_B = img_Lab[:,:,2]
 
 #Creating Base and depth layers
-base = cv2.bilateralFilter(img_L,20,75,75)
-detail = cv2.subtract(img_L.astype('float32'),base)
+base = cv2.bilateralFilter(img_L,9,75,75)
+detail = cv2.subtract(img_L,base)
 
 #Creating the depth map.
 F_b = 0.8
@@ -42,30 +43,30 @@ depth = F_b*base_N + F_d*detail_N
 #Creating a point source of light
 x_co = 10
 y_co = 10
-height = 1.2
-p = (x_co,y_co, height)
+h1 = 1.4
+p = (x_co,y_co, h1)
 
 #Creating new image based on visibility.
-d_img = numpy.zeros(img.shape)
-for i in range(img.shape[0]):
-    for j in range(img.shape[1]):
+
+d_img = numpy.zeros(img_L.shape,dtype = img_L.dtype)
+
+for i in range(img_L.shape[0]):
+    for j in range(img_L.shape[1]):
         q = (i,j,depth[i][j])
         if(visibility(p,q,depth)):
-            d_img[i][j] = img[i][j]
+            d_img[i][j] = img_L[i][j]
 
-#python uses bgr matplotlib rgb so changing colour space.
-b = d_img[:,:,0]
-g = d_img[:,:,1]
-r = d_img[:,:,2]
-d_img_rgb = numpy.zeros(img.shape)
-d_img_rgb[:,:,0] = r
-d_img_rgb[:,:,1] = g
-d_img_rgb[:,:,2] = b
-
-plt.imshow(d_img_rgb.astype(int))
-plt.show()
+f_img = numpy.zeros(img_Lab.shape,dtype = img_Lab.dtype)
+f_img[:,:,0] = d_img[:,:]
+f_img[:,:,1] = img_A[:,:]
+f_img[:,:,2] = img_B[:,:]
+f_img = cv2.cvtColor(f_img,cv2.COLOR_Lab2BGR)
+print(d_img.dtype)
+cv2.imshow('buddha_final',f_img)
+cv2.imwrite('buddha_out.jpg',f_img)
 
 
-        
-        
-        
+
+
+
+
